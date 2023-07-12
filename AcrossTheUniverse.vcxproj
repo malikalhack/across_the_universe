@@ -151,19 +151,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Across_the_Universe.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="universe.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Across_the_Universe.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Across_the_Universe.rc" />
+    <ResourceCompile Include="AcrossTheUniverse.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Across_the_Universe.ico" />
+    <Image Include="AcrossTheUniverse.ico" />
     <Image Include="small.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
