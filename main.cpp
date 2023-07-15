@@ -1,27 +1,25 @@
 ﻿#define WIN32_LEAN_AND_MEAN
 #include <SDKDDKVer.h>
-#include <windows.h>
-/*
-#include <stdlib.h>
-#include <malloc.h>
-#include <memory.h>
-#include <tchar.h>
-*/
 #include "resource.h"
 #include "universe.h"
+#include <tchar.h>
 
 #define MAX_LOADSTRING 100
 
-// Глобальные переменные:
-HINSTANCE hInst;                                // текущий экземпляр
-WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
-WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
+// Global variables:
+HINSTANCE hInst;
+WCHAR szTitle[MAX_LOADSTRING]       = _T("Across the Universe");
+WCHAR szWindowClass[MAX_LOADSTRING] = _T("Universe");
 
-// Отправить объявления функций, включенных в этот модуль кода:
+HWND MainWnd;
+
+//Submit declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+
+Universe universe;
 
 int APIENTRY wWinMain(
     _In_     HINSTANCE hInstance,
@@ -32,14 +30,12 @@ int APIENTRY wWinMain(
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: Разместите код здесь.
-
-    // Инициализация глобальных строк
+    // Global string initialize
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_ACROSSTHEUNIVERSE, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
 
-    // Выполнить инициализацию приложения:
+    // Application initialize
     if (!InitInstance (hInstance, nCmdShow)) {
         return FALSE;
     }
@@ -48,7 +44,9 @@ int APIENTRY wWinMain(
 
     MSG msg;
 
-    // Цикл основного сообщения:
+    SetTimer(MainWnd, 0, 1, 0);
+
+    // Main message loop
     while (GetMessage(&msg, nullptr, 0, 0)) {
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg)) {
             TranslateMessage(&msg);
@@ -56,14 +54,15 @@ int APIENTRY wWinMain(
         }
     }
 
+    KillTimer(MainWnd, 0);
+
     return (int) msg.wParam;
 }
 
-//
-//  ФУНКЦИЯ: MyRegisterClass()
-//
-//  ЦЕЛЬ: Регистрирует класс окна.
-//
+/**
+ * @fn MyRegisterClass
+ * @brief Register a window class
+ */
 ATOM MyRegisterClass(HINSTANCE hInstance) {
     WNDCLASSEXW wcex;
 
@@ -76,85 +75,110 @@ ATOM MyRegisterClass(HINSTANCE hInstance) {
     wcex.hInstance      = hInstance;
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ACROSSTHEUNIVERSE));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_ACROSSTHEUNIVERSE);
+    wcex.hbrBackground  = 0; // (HBRUSH)(COLOR_WINDOW + 1);
+    wcex.lpszMenuName   = 0; // MAKEINTRESOURCEW(IDC_ACROSSTHEUNIVERSE);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
     return RegisterClassExW(&wcex);
 }
 
-//
-//   ФУНКЦИЯ: InitInstance(HINSTANCE, int)
-//
-//   ЦЕЛЬ: Сохраняет маркер экземпляра и создает главное окно
-//
-//   КОММЕНТАРИИ:
-//
-//        В этой функции маркер экземпляра сохраняется в глобальной переменной, а также
-//        создается и выводится главное окно программы.
-//
+/**
+ * @fn InitInstance
+ * @brief Saves the instance handle and creates the main window
+ * @param[in] hInstance
+ * @param[in] nCmdShow
+ * @note In this function, the instance handle is stored in a global variable,
+ * and the main program window is created and displayed.
+ */
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
-   hInst = hInstance; // Сохранить маркер экземпляра в глобальной переменной
+   hInst = hInstance; // Store the instance marker in a global variable
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+   MainWnd = CreateWindowEx(
+       WS_EX_TOPMOST,
+       szWindowClass,
+       szWindowClass,
+       WS_POPUP | WS_VISIBLE,
+       0,
+       0,
+       universe.GetWidth(),
+       universe.GetHeigth(),
+       NULL,
+       NULL,
+       hInstance,
+       NULL
+   );
 
-   if (!hWnd) {
+   if (!MainWnd) {
       return FALSE;
    }
 
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+   ShowWindow(MainWnd, nCmdShow);
+   UpdateWindow(MainWnd);
 
    return TRUE;
 }
 
-//
-//  ФУНКЦИЯ: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  ЦЕЛЬ: Обрабатывает сообщения в главном окне.
-//
-//  WM_COMMAND  - обработать меню приложения
-//  WM_PAINT    - Отрисовка главного окна
-//  WM_DESTROY  - отправить сообщение о выходе и вернуться
-//
-//
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
+/**
+ * @fn WndProc
+ * @brief Processes messages in the main window.
+ * @param[in] hWnd
+ * @param[in] message
+ * @param[in] wParam
+ * @param[in] lParam
+ *
+ * @note WM_COMMAND  - process application menu
+ * @note WM_PAINT    - Drawing the main window
+ * @note WM_DESTROY  - send exit message and return
+ */
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    static HDC compdc;
+    static HBITMAP buffer;
+
     switch (message) {
-    case WM_COMMAND: {
-        int wmId = LOWORD(wParam);
-        // Разобрать выбор в меню:
-        switch (wmId) {
-        case IDM_ABOUT:
-            DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+        case WM_CREATE: {
+            HDC hdc = GetDC(hWnd);
+            compdc = CreateCompatibleDC(hdc);
+            buffer = CreateCompatibleBitmap(hdc, universe.GetWidth(), universe.GetHeigth());
+            SelectObject(compdc, buffer);
+            ReleaseDC(hWnd, hdc);
+        }
+        break;
+        case WM_KEYDOWN:
+            if (wParam == VK_ESCAPE)  SendMessage(hWnd, WM_CLOSE, 0, 0);
             break;
-        case IDM_EXIT:
-            DestroyWindow(hWnd);
+        case WM_TIMER:
+            InvalidateRect(hWnd, 0, FALSE);
+        case WM_COMMAND: {
+            int wmId = LOWORD(wParam);
+            // Parse menu selection:
+            switch (wmId) {
+                case IDM_ABOUT:
+                    DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+                    break;
+                case IDM_EXIT:
+                    DestroyWindow(hWnd);
+                    break;
+                default:
+                    return DefWindowProc(hWnd, message, wParam, lParam);
+            }
+        }
+        break;
+        case WM_PAINT:
+            universe.DrawingMainWindow(hWnd, compdc);
+            break;
+        case WM_DESTROY:
+            DeleteObject(compdc);
+            DeleteObject(buffer);
+            PostQuitMessage(0);
             break;
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
-        }
-    }
-    break;
-    case WM_PAINT: {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);
-        // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
-        EndPaint(hWnd, &ps);
-    }
-    break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
 }
 
-// Обработчик сообщений для окна "О программе".
+// Message handler for the "About" window.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
     UNREFERENCED_PARAMETER(lParam);
     switch (message) {
