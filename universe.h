@@ -8,9 +8,9 @@
 #define STAR_COUNT (1000u)
 
 typedef struct SPoint3d {
-    int x;
-    int y;
-    int z;
+    float x;
+    float y;
+    float z;
 }SPoint3d_t;
 
 typedef struct SEllipse {

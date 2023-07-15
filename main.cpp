@@ -12,14 +12,13 @@ WCHAR szTitle[MAX_LOADSTRING]       = _T("Across the Universe");
 WCHAR szWindowClass[MAX_LOADSTRING] = _T("Universe");
 
 HWND MainWnd;
+Universe universe;
 
 //Submit declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
-Universe universe;
 
 int APIENTRY wWinMain(
     _In_     HINSTANCE hInstance,
