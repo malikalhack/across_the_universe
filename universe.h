@@ -19,6 +19,7 @@ typedef struct SPoint3d {
     int x;
     int y;
     int z;
+    uint8_t fade;
 }SPoint3d_t;
 
 /****************************** Class declaration *****************************/
@@ -41,8 +42,8 @@ private:
 
     void _ResetStar(uint16_t star_number);
     bool _MoveStar(
-        SDL_Point* const previous_point,
-        SDL_Point* const screen_point,
+        SDL_FPoint * const previous_point,
+        SDL_FPoint * const screen_point,
         uint16_t star_number
     );
 };
