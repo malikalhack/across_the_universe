@@ -1,16 +1,15 @@
 #ifndef UNIVERSE_H
 #define UNIVERSE_H
 
+#include <SDL.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <windows.h>
 
 #define STAR_COUNT (1000u)
 
 typedef struct SPoint3d {
-    float x;
-    float y;
-    float z;
+    int x;
+    int y;
+    int z;
 }SPoint3d_t;
 
 typedef struct SEllipse {
@@ -23,12 +22,9 @@ typedef struct SEllipse {
 
 class Universe {
 public:
-    Universe ();
-    ~Universe ();
+    Universe(int32_t width, int32_t height);
     
-    int32_t GetWidth();
-    int32_t GetHeigth();
-    void DrawingMainWindow(HWND hWnd, HDC compdc);
+    bool Draw(SDL_Renderer* renderer);
 
 private:
     const int32_t _client_width;
@@ -40,8 +36,7 @@ private:
 
     SPoint3d_t point3d[STAR_COUNT];
 
-    void _MoveStars(SEllipse_t * const el, const uint16_t star_number);
+    void _MoveStars(SEllipse_t* const el, uint16_t star_number);
 };
 
 #endif // !UNIVERSE_H
-
