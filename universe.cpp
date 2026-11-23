@@ -21,21 +21,18 @@ Universe::Universe(int32_t width, int32_t height)
     for (int i = 0; i < STAR_COUNT; i++) {
         point3d[i].x = std::rand() % _client_width - _oX;
         point3d[i].y = std::rand() % _client_height - _oY;
-        point3d[i].z = std::rand() % _client_width - _oX;
+        point3d[i].z = std::rand() % _D;
     }
 }
 
 void Universe::_MoveStars(SEllipse_t* const el, uint16_t star_number) {
     float x, y, k, star_radius;
 
-    point3d[star_number].z = point3d[star_number].z - SPEED;
-
-    if (!(point3d[star_number].z + _D)) {
-        point3d[star_number].z = 0;
-    }
-
-    if (point3d[star_number].z <= -_D) {
-        point3d[star_number].z = 0;
+    point3d[star_number].z -= SPEED;
+    if (point3d[star_number].z <= 0) {
+        point3d[star_number].x = std::rand() % _client_width - _oX;
+        point3d[star_number].y = std::rand() % _client_height - _oY;
+        point3d[star_number].z = _D;
     }
 
     k = static_cast<float>(_D) / (point3d[star_number].z + _D);
@@ -43,7 +40,7 @@ void Universe::_MoveStars(SEllipse_t* const el, uint16_t star_number) {
     x = point3d[star_number].x * k + _oX;
     y = point3d[star_number].y * k + _oY;
 
-    star_radius = point3d[star_number].z / 200.f;
+    star_radius = (_D - point3d[star_number].z) / 200.f;
 
     el->left = static_cast<int>(std::floor(x - star_radius));
     el->top = static_cast<int>(std::floor(y - star_radius));
