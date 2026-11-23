@@ -1,10 +1,25 @@
-#include "universe.h"
+/**
+ * @file    universe.c
+ * @version 1.0.0
+ * @authors Anton Chernov
+ * @date    2026-11-24
+ * @date    @showdate "%Y-%m-%d"
+ */
 
-#include <ctime>
+/******************************** Included files ******************************/
+
 #include <cmath>
+#include <ctime>
 #include <stdexcept>
 
-constexpr int SPEED = 15;
+#include "universe.h"
+
+/********************************* Definitions ********************************/
+
+constexpr int SPEED = 8;
+constexpr float MAX_TRAIL_LENGTH = 6.f;
+
+/******************************* Class definition *****************************/
 
 Universe::Universe(int32_t width, int32_t height)
     :_client_width(width),
@@ -18,36 +33,58 @@ Universe::Universe(int32_t width, int32_t height)
     }
 
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
-    for (int i = 0; i < STAR_COUNT; i++) {
-        point3d[i].x = std::rand() % _client_width - _oX;
-        point3d[i].y = std::rand() % _client_height - _oY;
-        point3d[i].z = std::rand() % _D;
+    for (uint16_t i = 0; i < STAR_COUNT; i++) {
+        _ResetStar(i);
     }
 }
 
-void Universe::_MoveStars(SEllipse_t* const el, uint16_t star_number) {
-    float x, y, k, star_radius;
+void Universe::_ResetStar(uint16_t star_number) {
+    const int min_depth = _D / 2 > 0 ? _D / 2 : 1;
+    const int depth_range = _D - min_depth + 1;
+    const int depth = min_depth + std::rand() % depth_range;
+    const int screen_x = std::rand() % _client_width - _oX;
+    const int screen_y = std::rand() % _client_height - _oY;
+
+    point3d[star_number].x =
+        static_cast<int>((static_cast<int64_t>(screen_x) * depth) / _D);
+    point3d[star_number].y =
+        static_cast<int>((static_cast<int64_t>(screen_y) * depth) / _D);
+    if (point3d[star_number].x == 0 && point3d[star_number].y == 0) {
+        point3d[star_number].x = 1;
+    }
+    point3d[star_number].z = depth;
+}
+/*----------------------------------------------------------------------------*/
+
+bool Universe::_MoveStar(
+    SDL_Point* const previous_point,
+    SDL_Point* const screen_point,
+    uint16_t star_number
+) {
+    const float previous_scale =
+        static_cast<float>(_D) / point3d[star_number].z;
+    previous_point->x = static_cast<int>(
+        std::lround(point3d[star_number].x * previous_scale + _oX)
+    );
+    previous_point->y = static_cast<int>(
+        std::lround(point3d[star_number].y * previous_scale + _oY)
+    );
 
     point3d[star_number].z -= SPEED;
     if (point3d[star_number].z <= 0) {
-        point3d[star_number].x = std::rand() % _client_width - _oX;
-        point3d[star_number].y = std::rand() % _client_height - _oY;
-        point3d[star_number].z = _D;
+        _ResetStar(star_number);
+        screen_point->x = point3d[star_number].x + _oX;
+        screen_point->y = point3d[star_number].y + _oY;
+        return false;
     }
 
-    k = static_cast<float>(_D) / (point3d[star_number].z + _D);
+    const float scale = static_cast<float>(_D) / point3d[star_number].z;
 
-    x = point3d[star_number].x * k + _oX;
-    y = point3d[star_number].y * k + _oY;
-
-    star_radius = (_D - point3d[star_number].z) / 200.f;
-
-    el->left = static_cast<int>(std::floor(x - star_radius));
-    el->top = static_cast<int>(std::floor(y - star_radius));
-    el->right = static_cast<int>(std::floor(x + star_radius));
-    el->bottom = static_cast<int>(std::floor(y + star_radius));
-
+    screen_point->x = static_cast<int>(std::lround(point3d[star_number].x * scale + _oX));
+    screen_point->y = static_cast<int>(std::lround(point3d[star_number].y * scale + _oY));
+    return true;
 }
+/*----------------------------------------------------------------------------*/
 
 bool Universe::Draw(SDL_Renderer* renderer) {
     if (SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255) != 0 ||
@@ -56,26 +93,42 @@ bool Universe::Draw(SDL_Renderer* renderer) {
         return false;
     }
 
-    SEllipse_t el;
+    SDL_Point previous_point;
+    SDL_Point screen_point;
     for (uint16_t i = 0; i < STAR_COUNT; i++) {
-        _MoveStars(&el, i);
-        if (el.right <= el.left || el.bottom <= el.top) {
+        const bool continued = _MoveStar(&previous_point, &screen_point, i);
+        if (screen_point.x < 0 || screen_point.x >= _client_width ||
+            screen_point.y < 0 || screen_point.y >= _client_height) {
             continue;
         }
 
-        SDL_Rect rect{
-            el.left,
-            el.top,
-            el.right - el.left,
-            el.bottom - el.top
-        };
-        if (SDL_RenderFillRect(renderer, &rect) != 0) {
+        if (continued) {
+            const float dx = static_cast<float>(screen_point.x - previous_point.x);
+            const float dy = static_cast<float>(screen_point.y - previous_point.y);
+            const float length = std::hypot(dx, dy);
+            if (length > MAX_TRAIL_LENGTH) {
+                previous_point.x = static_cast<int>(
+                    std::lround(screen_point.x - dx * MAX_TRAIL_LENGTH / length)
+                );
+                previous_point.y = static_cast<int>(
+                    std::lround(screen_point.y - dy * MAX_TRAIL_LENGTH / length)
+                );
+            }
+        } else {
+            previous_point = screen_point;
+        }
+
+        if (SDL_RenderDrawLine(
+                renderer,
+                previous_point.x,
+                previous_point.y,
+                screen_point.x,
+                screen_point.y
+            ) != 0) {
             return false;
         }
     }
 
     return true;
 }
-
-
-
+/******************************************************************************/

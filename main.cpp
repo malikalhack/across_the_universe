@@ -1,7 +1,19 @@
+/**
+ * @file    main.cpp
+ * @version 1.0.0
+ * @authors Anton Chernov
+ * @date    2026-11-24
+ * @date    @showdate "%Y-%m-%d"
+ */
+
+/******************************** Included files ******************************/
+
+#include <iostream>
+
 #define SDL_MAIN_HANDLED
 #include "universe.h"
 
-#include <iostream>
+/********************** Application Programming Interface *********************/
 
 int main(int, char**) {
     SDL_SetMainReady();
@@ -85,3 +97,4 @@ int main(int, char**) {
     SDL_Quit();
     return exitCode;
 }
+/******************************************************************************/

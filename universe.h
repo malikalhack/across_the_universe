@@ -1,10 +1,19 @@
+/**
+ * @file    universe.h
+ * @version 1.0.0
+ * @authors Anton Chernov
+ * @date    2026-11-24
+ * @date    @showdate "%Y-%m-%d"
+ */
+
 #ifndef UNIVERSE_H
 #define UNIVERSE_H
-
+/******************************** Included files ******************************/
 #include <SDL.h>
 #include <stdint.h>
 
-#define STAR_COUNT (1000u)
+/********************************* Definitions ********************************/
+#define STAR_COUNT (600u)
 
 typedef struct SPoint3d {
     int x;
@@ -12,13 +21,7 @@ typedef struct SPoint3d {
     int z;
 }SPoint3d_t;
 
-typedef struct SEllipse {
-    int left;
-    int top;
-    int right;
-    int bottom;
-}SEllipse_t;
-
+/****************************** Class declaration *****************************/
 
 class Universe {
 public:
@@ -36,7 +39,12 @@ private:
 
     SPoint3d_t point3d[STAR_COUNT];
 
-    void _MoveStars(SEllipse_t* const el, uint16_t star_number);
+    void _ResetStar(uint16_t star_number);
+    bool _MoveStar(
+        SDL_Point* const previous_point,
+        SDL_Point* const screen_point,
+        uint16_t star_number
+    );
 };
-
+/******************************************************************************/
 #endif // !UNIVERSE_H
